@@ -461,7 +461,11 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label="+" onClick={() => handleKey('+')} variant="operator" />
 
           <CalcKey label="0" onClick={() => handleKey('0')} className="col-span-2" />
-          <CalcKey label="00" onClick={() => { handleKey('0'); handleKey('0'); }} />
+          <CalcKey label="00" onClick={() => {
+            const newRaw = rawValue === '0' ? '0' : rawValue + '00';
+            setRawValue(newRaw);
+            setDisplay(formatCurrency(newRaw));
+          }} />
           <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
         </div>
 
