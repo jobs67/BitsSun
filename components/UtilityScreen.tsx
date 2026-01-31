@@ -145,7 +145,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     setDiscountPercent(percent);
     const discountAmount = val * (percent / 100);
     const finalValue = val - discountAmount;
-    setDisplay(finalValue.toString().replace('.', ','));
+    // Truncate to 2 decimal places for currency
+    const truncated = parseFloat(finalValue.toFixed(2));
+    setDisplay(truncated.toString().replace('.', ','));
   };
 
   const handleKey = (key: string) => {
@@ -177,7 +179,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       try {
         const result = eval(display.replace('×', '*').replace('÷', '/').replace(',', '.'));
         setExpression(display); // Keep raw expression for history
-        setDisplay(result.toString().replace('.', ','));
+        // Truncate to 2 decimal places for currency
+        const truncated = parseFloat(result.toFixed(2));
+        setDisplay(truncated.toString().replace('.', ','));
       } catch {
         setDisplay('Erro');
       }
