@@ -409,9 +409,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label={<span className="material-symbols-outlined text-2xl">backspace</span>} onClick={() => handleKey('backspace')} variant="secondary" />
           <CalcKey
             label={
-              <div className="flex flex-col items-center gap-1">
-                <span className="material-symbols-outlined text-xl">discount</span>
-                <span className="text-[10px] font-black tracking-wider">DESC</span>
+              <div className="flex flex-col items-center gap-0">
+                <span className="material-symbols-outlined text-2xl fill-1">sell</span>
+                <span className="text-[9px] font-black tracking-wider">DESC</span>
               </div>
             }
             onClick={() => handleKey('%')}
