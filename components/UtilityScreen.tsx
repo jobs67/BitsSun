@@ -145,10 +145,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     setDiscountPercent(percent);
     const discountAmount = val * (percent / 100);
     const finalValue = val - discountAmount;
-    // Format with 2 decimals and update raw value
+    // Format with 2 decimals
     const formatted = finalValue.toFixed(2);
     setDisplay(formatted.replace('.', ','));
-    setRawValue((finalValue * 100).toFixed(0));
   };
 
   const handleKey = (key: string) => {
