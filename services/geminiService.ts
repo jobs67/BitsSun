@@ -5,7 +5,7 @@ import { translationCache } from './translationCache';
 import { getPreTranslation } from './preTranslatedPhrases';
 
 // Get API key from environment
-const apiKey = process.env.API_KEY || '';
+const apiKey = process.env.VITE_GEMINI_API_KEY || '';
 
 // Log API key status
 if (!apiKey || apiKey === '') {
