@@ -422,7 +422,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-white/50">Desconto ({discountPercent}%):</span>
-                  <span className="text-tourist-coral font-bold">-R$ {formatNumber((parseFloat(originalValue.replace(',', '.')) * (discountPercent / 100)).toString().replace('.', ','), 'pt-BR')}</span>
+                  <span className="text-tourist-coral font-bold">-R$ {formatNumber((parseFloat(originalValue.replace(',', '.')) * (discountPercent / 100)).toFixed(2).replace('.', ','), 'pt-BR')}</span>
                 </div>
                 <div className="flex justify-between text-lg pt-2 border-t border-white/10">
                   <span className="text-sun-gold font-black">Valor Final:</span>
