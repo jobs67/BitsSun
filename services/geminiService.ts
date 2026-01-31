@@ -31,7 +31,7 @@ export const validateApiKey = async (): Promise<'valid' | 'invalid' | 'missing'>
   try {
     // Test with a simple request
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: 'Hello',
     });
 
@@ -85,7 +85,7 @@ async function translateMyMemory(text: string, from: string, to: string): Promis
 export const detectLanguage = async (text: string): Promise<Language> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: `Detect the language of this text and respond with ONLY one word: "Portuguese", "English", or "Spanish". Text: "${text}"`,
     });
 
@@ -155,7 +155,7 @@ export const translateText = async (
     await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: `Translate the following text from ${fromLangInfo.geminiCode} to ${toLangInfo.geminiCode}. Return ONLY the translated text without any explanations, quotation marks, or additional commentary: "${text}"`,
     });
 
