@@ -40,6 +40,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
   const [showPixModal, setShowPixModal] = useState(false);
   const [tempPixKey, setTempPixKey] = useState('');
   const [showSendMenu, setShowSendMenu] = useState(false);
+  const [rawValue, setRawValue] = useState('0'); // Raw digits for auto-decimal
 
   // Helper to format numbers based on locale
   const formatNumber = (val: string, locale: string) => {
@@ -85,6 +86,23 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       // If number, format it
       return formatNumber(token, locale);
     }).join('');
+  };
+
+  // Format raw digits as currency (last 2 digits = centavos)
+  const formatCurrency = (raw: string) => {
+    // Remove leading zeros
+    const cleaned = raw.replace(/^0+/, '') || '0';
+    const len = cleaned.length;
+
+    if (len <= 2) {
+      // 0-99 centavos
+      return `0,${cleaned.padStart(2, '0')}`;
+    } else {
+      // Split into reais and centavos
+      const reais = cleaned.slice(0, len - 2);
+      const centavos = cleaned.slice(len - 2);
+      return `${reais},${centavos}`;
+    }
   };
 
   // Load PIX key from localStorage on mount
@@ -145,9 +163,10 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     setDiscountPercent(percent);
     const discountAmount = val * (percent / 100);
     const finalValue = val - discountAmount;
-    // Always show 2 decimal places for currency
+    // Format with 2 decimals and update raw value
     const formatted = finalValue.toFixed(2);
     setDisplay(formatted.replace('.', ','));
+    setRawValue((finalValue * 100).toFixed(0));
   };
 
   const handleKey = (key: string) => {
@@ -167,7 +186,8 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }
 
     if (key === 'C') {
-      setDisplay('0');
+      setDisplay('0,00');
+      setRawValue('0');
       setExpression('');
       setDiscountMode(false);
       setOriginalValue('0');
@@ -177,11 +197,12 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
 
     if (key === '=') {
       try {
-        const result = eval(display.replace('×', '*').replace('÷', '/').replace(',', '.'));
-        setExpression(display); // Keep raw expression for history
-        // Truncate to 2 decimal places for currency and always show decimals
-        const formatted = parseFloat(result).toFixed(2);
+        // Parse display value to number
+        const value = parseFloat(display.replace(',', '.'));
+        const formatted = value.toFixed(2);
         setDisplay(formatted.replace('.', ','));
+        setRawValue((value * 100).toString());
+        setExpression('');
       } catch {
         setDisplay('Erro');
       }
@@ -189,18 +210,18 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }
 
     if (key === 'backspace') {
-      setDisplay(prev => prev.length > 1 ? prev.slice(0, -1) : '0');
+      const newRaw = rawValue.length > 1 ? rawValue.slice(0, -1) : '0';
+      setRawValue(newRaw);
+      setDisplay(formatCurrency(newRaw));
       return;
     }
 
-    // Prevent multiple commas in same number segment
-    if (key === ',') {
-      const parts = display.split(/[+\-×÷]/);
-      const currentNumber = parts[parts.length - 1];
-      if (currentNumber.includes(',')) return;
+    // Handle number input (0-9)
+    if (/^[0-9]$/.test(key)) {
+      const newRaw = rawValue === '0' ? key : rawValue + key;
+      setRawValue(newRaw);
+      setDisplay(formatCurrency(newRaw));
     }
-
-    setDisplay(prev => (prev === '0' && key !== ',' ? key : prev + key));
   };
 
   const getConverted = () => {
@@ -440,7 +461,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label="+" onClick={() => handleKey('+')} variant="operator" />
 
           <CalcKey label="0" onClick={() => handleKey('0')} className="col-span-2" />
-          <CalcKey label="," onClick={() => handleKey(',')} />
+          <CalcKey label="00" onClick={() => { handleKey('0'); handleKey('0'); }} />
           <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
         </div>
 
