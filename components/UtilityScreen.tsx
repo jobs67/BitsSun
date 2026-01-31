@@ -33,6 +33,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInverted, setIsInverted] = useState(false); // false = BRL->USD/EUR, true = USD/EUR->BRL
+  const [discountMode, setDiscountMode] = useState(false); // Discount calculator mode
+  const [originalValue, setOriginalValue] = useState('0');
+  const [discountPercent, setDiscountPercent] = useState(0);
 
   // Helper to format numbers based on locale
   const formatNumber = (val: string, locale: string) => {
@@ -80,10 +83,39 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }).join('');
   };
 
+  const applyDiscount = (percent: number) => {
+    const val = parseFloat(display.replace(',', '.'));
+    if (isNaN(val)) return;
+
+    setOriginalValue(display);
+    setDiscountPercent(percent);
+    const discountAmount = val * (percent / 100);
+    const finalValue = val - discountAmount;
+    setDisplay(finalValue.toString().replace('.', ','));
+  };
+
   const handleKey = (key: string) => {
+    // Toggle discount mode when % is pressed
+    if (key === '%') {
+      if (discountMode) {
+        // Exit discount mode
+        setDiscountMode(false);
+        setOriginalValue('0');
+        setDiscountPercent(0);
+      } else {
+        // Enter discount mode
+        setDiscountMode(true);
+        setOriginalValue(display);
+      }
+      return;
+    }
+
     if (key === 'C') {
       setDisplay('0');
       setExpression('');
+      setDiscountMode(false);
+      setOriginalValue('0');
+      setDiscountPercent(0);
       return;
     }
 
@@ -284,11 +316,45 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           )}
         </div>
 
-        {/* Keypad - Brutalist */}
-        <div className="grid grid-cols-4 gap-2 mb-5">
+        {/* Discount Mode - Percentage Buttons */}
+        {discountMode && (
+          <div className="mb-4 p-4 bg-charcoal rounded-sm border-l-4 border-sun-gold">
+            <div className="text-white/70 text-xs font-bold uppercase tracking-widest mb-3">Desconto Rápido</div>
+            <div className="grid grid-cols-3 gap-2">
+              {[5, 10, 15, 20, 25, 30].map(percent => (
+                <button
+                  key={percent}
+                  onClick={() => applyDiscount(percent)}
+                  className="py-3 bg-sun-gold text-charcoal-deep rounded-sm font-black text-lg hover:translate-y-[-2px] active:translate-y-0 transition-all shadow-lg"
+                >
+                  {percent}%
+                </button>
+              ))}
+            </div>
+            {discountPercent > 0 && (
+              <div className="mt-3 pt-3 border-t border-white/10 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">Valor Original:</span>
+                  <span className="text-white font-bold">R$ {formatNumber(originalValue, 'pt-BR')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">Desconto ({discountPercent}%):</span>
+                  <span className="text-tourist-coral font-bold">-R$ {formatNumber((parseFloat(originalValue.replace(',', '.')) * (discountPercent / 100)).toString().replace('.', ','), 'pt-BR')}</span>
+                </div>
+                <div className="flex justify-between text-lg pt-2 border-t border-white/10">
+                  <span className="text-sun-gold font-black">Valor Final:</span>
+                  <span className="text-sun-gold font-black">R$ {formatNumber(display, 'pt-BR')}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Keypad - Grid */}
+        <div className="grid grid-cols-4 gap-3">
           <CalcKey label="C" onClick={() => handleKey('C')} variant="danger" />
           <CalcKey label={<span className="material-symbols-outlined text-2xl">backspace</span>} onClick={() => handleKey('backspace')} variant="secondary" />
-          <CalcKey label="%" onClick={() => handleKey('%')} variant="secondary" />
+          <CalcKey label="%" onClick={() => handleKey('%')} variant={discountMode ? 'operator' : 'secondary'} />
           <CalcKey label="÷" onClick={() => handleKey('÷')} variant="operator" />
 
           <CalcKey label="7" onClick={() => handleKey('7')} />
