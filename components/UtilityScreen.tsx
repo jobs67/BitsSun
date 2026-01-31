@@ -477,13 +477,13 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
                   handleSendPix();
                   setShowSendMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-sun-gold/20 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-4 bg-[#00A868] hover:bg-[#00C97A] transition-all text-left border-l-4 border-[#008C57] animate-pulse"
               >
-                <span className="text-2xl">💳</span>
+                <span className="text-3xl">💳</span>
                 <div className="flex-1">
-                  <div className="text-white font-black text-sm">Enviar com PIX</div>
-                  <div className="text-white/60 text-xs">
-                    {pixKey ? 'Incluir chave PIX' : 'Configurar chave'}
+                  <div className="text-white font-black text-base">Enviar com PIX</div>
+                  <div className="text-white/90 text-xs font-bold">
+                    {pixKey ? '✓ Chave configurada' : '⚠️ Configurar chave'}
                   </div>
                 </div>
               </button>
