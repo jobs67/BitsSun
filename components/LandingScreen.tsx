@@ -43,7 +43,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-charcoal-deep relative overflow-hidden">
+    <div className="flex flex-col h-full bg-charcoal-deep relative overflow-x-hidden overflow-y-auto">
       {/* Brutalist geometric background */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-sun-gold rotate-12 translate-x-16 -translate-y-16"></div>
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-sun-gold/20 -rotate-12 -translate-x-24 translate-y-24"></div>
@@ -112,17 +112,17 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 z-10">
         {/* Bold typography hero */}
-        <div className="text-center mb-10 animate-slide-up">
-          <h1 className="text-5xl font-display font-extrabold text-white mb-2 leading-none tracking-tight">
+        <div className="text-center mb-6 md:mb-10 animate-slide-up">
+          <h1 className="text-4xl md:text-5xl font-display font-extrabold text-white mb-2 leading-none tracking-tight">
             AQUI
           </h1>
-          <h2 className="text-4xl font-display font-extrabold text-sun-gold leading-none tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-display font-extrabold text-sun-gold leading-none tracking-tight">
             O GRINGO COMPRA
           </h2>
         </div>
 
         {/* Sharp phone mockup */}
-        <div className="relative w-72 mb-10 animate-scale-in delay-200">
+        <div className="relative w-64 md:w-72 mb-6 md:mb-10 animate-scale-in delay-200">
           <div className="relative mx-auto w-40 h-64 bg-charcoal border-4 border-sun-gold rounded-sm shadow-2xl flex flex-col pt-4 overflow-hidden">
             {/* Status bar */}
             <div className="h-2 w-16 bg-sun-gold mx-auto mb-4"></div>
@@ -162,7 +162,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
         </div>
 
         {/* Tagline */}
-        <p className="text-white/70 text-base font-bold text-center mb-8 max-w-xs animate-slide-up delay-200">
+        <p className="text-white/70 text-base font-bold text-center mb-6 md:mb-8 max-w-xs animate-slide-up delay-200">
           Tradução instantânea por voz. Negocie com o mundo.
         </p>
 
