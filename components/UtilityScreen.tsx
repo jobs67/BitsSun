@@ -40,7 +40,6 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
   const [showPixModal, setShowPixModal] = useState(false);
   const [tempPixKey, setTempPixKey] = useState('');
   const [showSendMenu, setShowSendMenu] = useState(false);
-  const [rawValue, setRawValue] = useState('0'); // Raw digits for auto-decimal
 
   // Helper to format numbers based on locale
   const formatNumber = (val: string, locale: string) => {
@@ -86,23 +85,6 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       // If number, format it
       return formatNumber(token, locale);
     }).join('');
-  };
-
-  // Format raw digits as currency (last 2 digits = centavos)
-  const formatCurrency = (raw: string) => {
-    // Remove leading zeros
-    const cleaned = raw.replace(/^0+/, '') || '0';
-    const len = cleaned.length;
-
-    if (len <= 2) {
-      // 0-99 centavos
-      return `0,${cleaned.padStart(2, '0')}`;
-    } else {
-      // Split into reais and centavos
-      const reais = cleaned.slice(0, len - 2);
-      const centavos = cleaned.slice(len - 2);
-      return `${reais},${centavos}`;
-    }
   };
 
   // Load PIX key from localStorage on mount
@@ -186,8 +168,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }
 
     if (key === 'C') {
-      setDisplay('0,00');
-      setRawValue('0');
+      setDisplay('0');
       setExpression('');
       setDiscountMode(false);
       setOriginalValue('0');
@@ -203,7 +184,6 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           const result = eval(fullExpression.replace('×', '*').replace('÷', '/'));
           const formatted = parseFloat(result).toFixed(2);
           setDisplay(formatted.replace('.', ','));
-          setRawValue((result * 100).toFixed(0));
           setExpression('');
         } catch {
           setDisplay('Erro');
@@ -214,9 +194,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }
 
     if (key === 'backspace') {
-      const newRaw = rawValue.length > 1 ? rawValue.slice(0, -1) : '0';
-      setRawValue(newRaw);
-      setDisplay(formatCurrency(newRaw));
+      setDisplay(prev => prev.length > 1 ? prev.slice(0, -1) : '0');
       return;
     }
 
@@ -229,7 +207,6 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           const result = eval(fullExpression.replace('×', '*').replace('÷', '/'));
           const formatted = parseFloat(result).toFixed(2);
           setDisplay(formatted.replace('.', ','));
-          setRawValue((result * 100).toFixed(0));
           setExpression(formatted.replace('.', ',') + key);
         } catch {
           setExpression(display + key);
@@ -237,15 +214,18 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       } else {
         setExpression(display + key);
       }
-      setRawValue('0');
+      setDisplay('0');
       return;
     }
 
-    // Handle number input (0-9)
-    if (/^[0-9]$/.test(key)) {
-      const newRaw = rawValue === '0' ? key : rawValue + key;
-      setRawValue(newRaw);
-      setDisplay(formatCurrency(newRaw));
+    // Prevent multiple commas
+    if (key === ',') {
+      if (display.includes(',')) return;
+    }
+
+    // Handle number and comma input
+    if (/^[0-9,]$/.test(key)) {
+      setDisplay(prev => prev === '0' && key !== ',' ? key : prev + key);
     }
   };
 
@@ -486,11 +466,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label="+" onClick={() => handleKey('+')} variant="operator" />
 
           <CalcKey label="0" onClick={() => handleKey('0')} className="col-span-2" />
-          <CalcKey label="00" onClick={() => {
-            const newRaw = rawValue === '0' ? '0' : rawValue + '00';
-            setRawValue(newRaw);
-            setDisplay(formatCurrency(newRaw));
-          }} />
+          <CalcKey label="," onClick={() => handleKey(',')} />
           <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
         </div>
 
