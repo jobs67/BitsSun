@@ -461,9 +461,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
                     e.stopPropagation();
                     setShowSendMenu(!showSendMenu);
                   }}
-                  className="ml-auto p-2 bg-[#FF6B35] hover:bg-[#FF5722] rounded-sm transition-all animate-pulse border-2 border-[#E85D2A]"
+                  className="ml-auto px-3 py-2 bg-[#FF6B35] hover:bg-[#FF5722] rounded-sm transition-all animate-pulse border-2 border-[#E85D2A]"
                 >
-                  <span className="text-2xl">💳</span>
+                  <span className="text-sm font-black text-white">PIX</span>
                 </button>
               </>
             )}
