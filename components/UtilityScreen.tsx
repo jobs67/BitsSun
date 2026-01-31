@@ -477,7 +477,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
                   handleSendPix();
                   setShowSendMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-4 bg-[#00A868] hover:bg-[#00C97A] transition-all text-left border-l-4 border-[#008C57] animate-pulse"
+                className="w-full flex items-center gap-3 px-4 py-4 bg-[#FF6B35] hover:bg-[#FF5722] transition-all text-left border-l-4 border-[#E85D2A] animate-pulse"
               >
                 <span className="text-3xl">💳</span>
                 <div className="flex-1">
