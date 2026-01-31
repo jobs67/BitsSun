@@ -17,7 +17,7 @@ Arquitetura robusta de 4 camadas para tradução rápida e econômica:
 - **Lanterna Integrada:** Para vendas noturnas e sinalização.
 - **Calculadora Multimoeda:** Conversão em tempo real (BRL ↔ USD/EUR) com formatação correta de milhar/centavos.
 - **Modo Voz Híbrido:** Reprodução automática ou manual das traduções.
-- **Exportação de Conversa:** Compartilhe o histórico via WhatsApp, Telegram ou Email.
+- **Exportação de Conversa:** Compartilhe o histórico via Email.
 
 ### 🎨 Design & UX
 - **Estilo Brutalista:** Interface de alto contraste, elementos geométricos e tipografia impactante.

@@ -31,7 +31,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
   const [autoPlayVoice, setAutoPlayVoice] = useState(false); // Hybrid voice mode
   const [flashlightOn, setFlashlightOn] = useState(false); // Flashlight state
   const flashlightStreamRef = useRef<MediaStream | null>(null);
-  const [showExportMenu, setShowExportMenu] = useState(false); // Export menu
+
   const [voiceSettings] = useState<VoiceSettings>({
     enabled: true,
     autoPlay: true,
@@ -150,7 +150,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
     }
   };
 
-  const exportConversation = (platform: 'whatsapp' | 'email' | 'telegram') => {
+  const exportConversation = () => {
     // Format conversation
     const conversationText = messages.map(msg => {
       const sender = msg.sender === 'VENDOR' ? '🇧🇷 Vendedor' : '🌍 Turista';
@@ -159,19 +159,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
 
     const fullText = `📱 BitsSun - Conversa Traduzida\n\n${conversationText}`;
 
-    switch (platform) {
-      case 'whatsapp':
-        window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
-        break;
-      case 'email':
-        window.location.href = `mailto:?subject=BitsSun - Conversa Traduzida&body=${encodeURIComponent(fullText)}`;
-        break;
-      case 'telegram':
-        window.open(`https://t.me/share/url?url=${encodeURIComponent('BitsSun')}&text=${encodeURIComponent(fullText)}`, '_blank');
-        break;
-    }
-
-    setShowExportMenu(false);
+    // Send via email
+    window.location.href = `mailto:?subject=BitsSun - Conversa Traduzida&body=${encodeURIComponent(fullText)}`;
   };
 
   const handleTranslation = async (text: string, sender: 'VENDOR' | 'TOURIST') => {
@@ -341,43 +330,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
               <span className="material-symbols-outlined text-3xl">delete</span>
             </button>
 
-            {/* Export Button with Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center justify-center h-14 w-full rounded-sm bg-charcoal-soft text-white hover:bg-sun-gold hover:text-charcoal-deep active:scale-95 transition-all shadow-lg"
-                title="Exportar Conversa"
-              >
-                <span className="material-symbols-outlined text-3xl">share</span>
-              </button>
-
-              {/* Export Dropdown Menu */}
-              {showExportMenu && (
-                <div className="absolute right-0 top-16 bg-surface rounded-sm shadow-2xl border-2 border-sun-gold z-50 min-w-[200px]">
-                  <button
-                    onClick={() => exportConversation('whatsapp')}
-                    className="flex items-center gap-3 w-full px-4 py-3 hover:bg-sun-gold/10 transition-colors border-b border-border-light"
-                  >
-                    <span className="text-2xl">💬</span>
-                    <span className="font-bold text-charcoal">WhatsApp</span>
-                  </button>
-                  <button
-                    onClick={() => exportConversation('email')}
-                    className="flex items-center gap-3 w-full px-4 py-3 hover:bg-sun-gold/10 transition-colors border-b border-border-light"
-                  >
-                    <span className="text-2xl">📧</span>
-                    <span className="font-bold text-charcoal">Email</span>
-                  </button>
-                  <button
-                    onClick={() => exportConversation('telegram')}
-                    className="flex items-center gap-3 w-full px-4 py-3 hover:bg-sun-gold/10 transition-colors"
-                  >
-                    <span className="text-2xl">✈️</span>
-                    <span className="font-bold text-charcoal">Telegram</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Export Button - Direct Email */}
+            <button
+              onClick={exportConversation}
+              className="flex items-center justify-center h-14 w-full rounded-sm bg-charcoal-soft text-white hover:bg-sun-gold hover:text-charcoal-deep active:scale-95 transition-all shadow-lg"
+              title="Exportar por Email"
+            >
+              <span className="material-symbols-outlined text-3xl">email</span>
+            </button>
           </div>
         </div>
 

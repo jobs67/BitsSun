@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { isSpeechRecognitionSupported } from '../services/speechService';
+import { validateApiKey, isGeminiAvailable } from '../services/geminiService';
 
 interface LandingScreenProps {
   onStart: () => void;
@@ -8,10 +9,38 @@ interface LandingScreenProps {
 
 const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
   const [showWarning, setShowWarning] = useState(false);
+  const [apiKeyStatus, setApiKeyStatus] = useState<'valid' | 'invalid' | 'missing' | 'checking'>('checking');
 
   useEffect(() => {
     setShowWarning(!isSpeechRecognitionSupported());
+
+    // Validate API Key on mount
+    const checkApiKey = async () => {
+      if (!isGeminiAvailable()) {
+        setApiKeyStatus('missing');
+        return;
+      }
+
+      const status = await validateApiKey();
+      setApiKeyStatus(status);
+    };
+
+    checkApiKey();
   }, []);
+
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleLogoClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+
+    if (newCount >= 5) {
+      throw new Error("Simulação de Erro Crítico (Teste do Error Boundary)");
+    }
+
+    // Reset after 3 seconds if not completed
+    setTimeout(() => setClickCount(0), 3000);
+  };
 
   return (
     <div className="flex flex-col h-full bg-charcoal-deep relative overflow-hidden">
@@ -22,7 +51,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
 
       <header className="flex items-center justify-between p-6 z-10 animate-slide-up">
         {/* New Two-Tone Logo */}
-        <div className="flex items-center gap-0">
+        <button className="flex items-center gap-0 active:scale-95 transition-transform" onClick={handleLogoClick}>
           {/* Sun Icon - Golden Square */}
           <div className="w-12 h-12 bg-sun-gold rounded-l-md flex items-center justify-center shadow-lg">
             <span className="material-symbols-outlined text-charcoal-deep text-2xl fill-1">wb_sunny</span>
@@ -31,7 +60,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
           <div className="h-12 bg-red-500 rounded-r-md px-4 flex items-center shadow-lg">
             <span className="text-xl font-black tracking-tight text-white font-display">BitsSun</span>
           </div>
-        </div>
+        </button>
       </header>
 
       {/* Browser Warning */}
@@ -43,6 +72,38 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
               <p className="text-sm font-bold text-white mb-1">Navegador não suportado</p>
               <p className="text-xs text-white/80">
                 Para melhor experiência, use Chrome ou Edge.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* API Key Status Indicator */}
+      {apiKeyStatus !== 'checking' && (
+        <div className={`mx-6 mb-4 p-4 border-l-4 z-10 animate-slide-up ${apiKeyStatus === 'valid'
+          ? 'bg-vendor-green border-vendor-green-dark'
+          : apiKeyStatus === 'missing'
+            ? 'bg-sun-gold border-sun-gold/60'
+            : 'bg-tourist-coral border-tourist-coral-dark'
+          }`}>
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-white text-xl fill-1">
+              {apiKeyStatus === 'valid' ? 'check_circle' : apiKeyStatus === 'missing' ? 'info' : 'error'}
+            </span>
+            <div className="flex-1">
+              <p className={`text-sm font-bold mb-1 ${apiKeyStatus === 'missing' ? 'text-charcoal-deep' : 'text-white'}`}>
+                {apiKeyStatus === 'valid'
+                  ? '✅ Gemini AI Ativo'
+                  : apiKeyStatus === 'missing'
+                    ? '⚠️ Modo Gratuito'
+                    : '❌ API Key Inválida'}
+              </p>
+              <p className={`text-xs ${apiKeyStatus === 'missing' ? 'text-charcoal-deep/80' : 'text-white/80'}`}>
+                {apiKeyStatus === 'valid'
+                  ? 'Tradução premium disponível via Gemini AI.'
+                  : apiKeyStatus === 'missing'
+                    ? 'Usando MyMemory API (gratuito). Configure VITE_GEMINI_API_KEY para melhor qualidade.'
+                    : 'Verifique sua chave no arquivo .env.local'}
               </p>
             </div>
           </div>

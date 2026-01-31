@@ -14,13 +14,13 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        includeAssets: ['apple-touch-icon.png', 'masked-icon.svg'],
         manifest: {
           name: 'BitsSun - Tradutor para Vendedores',
           short_name: 'BitsSun',
           description: 'Venda para o mundo sem barreiras. Tradução instantânea offline.',
-          theme_color: '#1E293B',
-          background_color: '#1E293B',
+          theme_color: '#FBBF24',
+          background_color: '#FBBF24',
           display: 'standalone',
           orientation: 'portrait',
           icons: [

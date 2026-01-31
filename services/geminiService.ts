@@ -19,6 +19,39 @@ const ai = new GoogleGenAI({
   apiVersion: 'v1'
 });
 
+/**
+ * Validate Gemini API Key
+ * Returns: 'valid' | 'invalid' | 'missing'
+ */
+export const validateApiKey = async (): Promise<'valid' | 'invalid' | 'missing'> => {
+  if (!apiKey || apiKey === '') {
+    return 'missing';
+  }
+
+  try {
+    // Test with a simple request
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: 'Hello',
+    });
+
+    if (response.text) {
+      return 'valid';
+    }
+    return 'invalid';
+  } catch (error) {
+    console.error('API Key validation failed:', error);
+    return 'invalid';
+  }
+};
+
+/**
+ * Check if Gemini is available (has API key)
+ */
+export const isGeminiAvailable = (): boolean => {
+  return apiKey !== '' && apiKey !== undefined;
+};
+
 // Cache key generator
 const getCacheKey = (text: string, from: string, to: string): string => {
   return `${from}:${to}:${text.toLowerCase().trim()}`;
