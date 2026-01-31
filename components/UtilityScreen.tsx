@@ -39,6 +39,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
   const [pixKey, setPixKey] = useState('');
   const [showPixModal, setShowPixModal] = useState(false);
   const [tempPixKey, setTempPixKey] = useState('');
+  const [showSendMenu, setShowSendMenu] = useState(false);
 
   // Helper to format numbers based on locale
   const formatNumber = (val: string, locale: string) => {
@@ -415,7 +416,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
               </div>
             }
             onClick={() => handleKey('%')}
-            variant={discountMode ? 'operator' : 'secondary'}
+            variant="discount"
           />
           <CalcKey label="÷" onClick={() => handleKey('÷')} variant="operator" />
 
@@ -439,20 +440,8 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
         </div>
 
-        {/* Send Buttons - Brutalist */}
-        <div className="mt-auto space-y-3">
-          {/* PIX Payment Button */}
-          <button
-            onClick={handleSendPix}
-            disabled={isProcessing || display === '0' || display === 'Erro'}
-            className="flex items-center justify-center gap-3 py-4 w-full bg-[#00A868] text-white rounded-sm font-black text-base shadow-xl border-l-4 border-[#008C57] hover:translate-y-[-2px] active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="text-2xl">💳</span>
-            <span className="uppercase tracking-wide">Enviar PIX</span>
-            {!pixKey && <span className="text-xs opacity-70">(Configurar)</span>}
-          </button>
-
-          {/* Regular Send Button */}
+        {/* Unified Send Button with PIX Option */}
+        <div className="mt-auto relative">
           <button
             onClick={handleShareToChat}
             disabled={isProcessing || display === '0' || display === 'Erro'}
@@ -467,9 +456,39 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
               <>
                 <span className="material-symbols-outlined text-2xl fill-1">send</span>
                 <span className="uppercase tracking-wide">Enviar para o Chat</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSendMenu(!showSendMenu);
+                  }}
+                  className="ml-auto p-2 hover:bg-white/10 rounded-sm transition-colors"
+                >
+                  <span className="text-2xl">💳</span>
+                </button>
               </>
             )}
           </button>
+
+          {/* PIX Send Menu */}
+          {showSendMenu && (
+            <div className="absolute bottom-full mb-2 right-0 bg-charcoal rounded-sm border-2 border-sun-gold shadow-xl overflow-hidden w-64">
+              <button
+                onClick={() => {
+                  handleSendPix();
+                  setShowSendMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-sun-gold/20 transition-colors text-left"
+              >
+                <span className="text-2xl">💳</span>
+                <div className="flex-1">
+                  <div className="text-white font-black text-sm">Enviar com PIX</div>
+                  <div className="text-white/60 text-xs">
+                    {pixKey ? 'Incluir chave PIX' : 'Configurar chave'}
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </main>
 
@@ -522,7 +541,7 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
 interface CalcKeyProps {
   label: React.ReactNode;
   onClick: () => void;
-  variant?: 'default' | 'secondary' | 'operator' | 'danger';
+  variant?: 'default' | 'secondary' | 'operator' | 'danger' | 'discount';
   className?: string;
 }
 
@@ -531,7 +550,8 @@ const CalcKey: React.FC<CalcKeyProps> = ({ label, onClick, variant = 'default', 
     default: 'bg-charcoal-soft text-white',
     secondary: 'bg-charcoal text-white/70',
     operator: 'bg-sun-gold text-charcoal-deep font-black',
-    danger: 'bg-tourist-coral text-white font-black'
+    danger: 'bg-tourist-coral text-white font-black',
+    discount: 'bg-blue-600 text-white font-black border-2 border-white'
   };
 
   return (
