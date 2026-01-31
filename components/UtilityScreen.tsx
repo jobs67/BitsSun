@@ -36,6 +36,9 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
   const [discountMode, setDiscountMode] = useState(false); // Discount calculator mode
   const [originalValue, setOriginalValue] = useState('0');
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [pixKey, setPixKey] = useState('');
+  const [showPixModal, setShowPixModal] = useState(false);
+  const [tempPixKey, setTempPixKey] = useState('');
 
   // Helper to format numbers based on locale
   const formatNumber = (val: string, locale: string) => {
@@ -81,6 +84,56 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       // If number, format it
       return formatNumber(token, locale);
     }).join('');
+  };
+
+  // Load PIX key from localStorage on mount
+  React.useEffect(() => {
+    const savedPixKey = localStorage.getItem('bitssun_pix_key');
+    if (savedPixKey) {
+      setPixKey(savedPixKey);
+    }
+  }, []);
+
+  const savePixKey = () => {
+    if (tempPixKey.trim()) {
+      localStorage.setItem('bitssun_pix_key', tempPixKey.trim());
+      setPixKey(tempPixKey.trim());
+      setShowPixModal(false);
+      setTempPixKey('');
+    }
+  };
+
+  const handleSendPix = async () => {
+    if (!pixKey) {
+      setShowPixModal(true);
+      return;
+    }
+
+    const value = display;
+    const pixMessage = `💰 Pagamento PIX\n\nValor: R$ ${formatNumber(value, 'pt-BR')}\n\n🔑 Chave PIX:\n${pixKey}`;
+
+    setIsProcessing(true);
+    try {
+      const translated = await translateText(pixMessage, Language.PT_BR, touristLanguage);
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        sender: 'VENDOR',
+        originalText: pixMessage,
+        translatedText: translated,
+        timestamp: Date.now(),
+        originalLanguage: Language.PT_BR,
+        targetLanguage: touristLanguage
+      };
+      onAddMessage(newMessage);
+
+      speechService.speak(translated, touristLanguage);
+
+      onBack();
+    } catch (error) {
+      console.error('Error sending PIX:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const applyDiscount = (percent: number) => {
@@ -354,7 +407,16 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
         <div className="grid grid-cols-4 gap-3">
           <CalcKey label="C" onClick={() => handleKey('C')} variant="danger" />
           <CalcKey label={<span className="material-symbols-outlined text-2xl">backspace</span>} onClick={() => handleKey('backspace')} variant="secondary" />
-          <CalcKey label="%" onClick={() => handleKey('%')} variant={discountMode ? 'operator' : 'secondary'} />
+          <CalcKey
+            label={
+              <div className="flex flex-col items-center gap-1">
+                <span className="material-symbols-outlined text-xl">discount</span>
+                <span className="text-[10px] font-black tracking-wider">DESC</span>
+              </div>
+            }
+            onClick={() => handleKey('%')}
+            variant={discountMode ? 'operator' : 'secondary'}
+          />
           <CalcKey label="÷" onClick={() => handleKey('÷')} variant="operator" />
 
           <CalcKey label="7" onClick={() => handleKey('7')} />
@@ -377,8 +439,20 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
         </div>
 
-        {/* Send Button - Brutalist */}
-        <div className="mt-auto">
+        {/* Send Buttons - Brutalist */}
+        <div className="mt-auto space-y-3">
+          {/* PIX Payment Button */}
+          <button
+            onClick={handleSendPix}
+            disabled={isProcessing || display === '0' || display === 'Erro'}
+            className="flex items-center justify-center gap-3 py-4 w-full bg-[#00A868] text-white rounded-sm font-black text-base shadow-xl border-l-4 border-[#008C57] hover:translate-y-[-2px] active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="text-2xl">💳</span>
+            <span className="uppercase tracking-wide">Enviar PIX</span>
+            {!pixKey && <span className="text-xs opacity-70">(Configurar)</span>}
+          </button>
+
+          {/* Regular Send Button */}
           <button
             onClick={handleShareToChat}
             disabled={isProcessing || display === '0' || display === 'Erro'}
@@ -404,6 +478,43 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
           © 2025 JCBULHOES
         </p>
       </footer>
+
+      {/* PIX Key Modal */}
+      {showPixModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-5 z-50">
+          <div className="bg-charcoal rounded-sm border-l-4 border-sun-gold p-6 max-w-md w-full">
+            <h3 className="text-white font-black text-xl mb-2">Configurar Chave PIX</h3>
+            <p className="text-white/70 text-sm mb-4">
+              Salve sua chave PIX para enviar informações de pagamento aos clientes.
+            </p>
+            <input
+              type="text"
+              value={tempPixKey}
+              onChange={(e) => setTempPixKey(e.target.value)}
+              placeholder="Digite sua chave PIX (CPF, e-mail, telefone...)"
+              className="w-full bg-charcoal-deep text-white px-4 py-3 rounded-sm border-2 border-white/20 focus:border-sun-gold outline-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPixModal(false);
+                  setTempPixKey('');
+                }}
+                className="flex-1 py-3 bg-charcoal-soft text-white rounded-sm font-bold hover:translate-y-[-2px] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={savePixKey}
+                disabled={!tempPixKey.trim()}
+                className="flex-1 py-3 bg-sun-gold text-charcoal-deep rounded-sm font-black hover:translate-y-[-2px] transition-all disabled:opacity-50"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
