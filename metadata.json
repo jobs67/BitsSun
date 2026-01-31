@@ -1,0 +1,7 @@
+{
+  "name": "BitsSun",
+  "description": "Uma plataforma de tradução instantânea projetada para vendedores e turistas, quebrando barreiras linguísticas com tecnologia Gemini.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

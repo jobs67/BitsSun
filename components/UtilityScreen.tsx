@@ -1,0 +1,370 @@
+
+import React, { useState } from 'react';
+import { Message, Language } from '../types';
+import { translateText } from '../services/geminiService';
+import { speechService } from '../services/speechService';
+import { getLanguageInfo } from '../services/languageConfig';
+
+interface UtilityScreenProps {
+  onBack: () => void;
+  onAddMessage: (msg: Message) => void;
+  touristLanguage: Language;
+}
+
+interface Currency {
+  code: string;
+  symbol: string;
+  name: string;
+  rate: number;
+  locale: string;
+}
+
+const CURRENCIES: Currency[] = [
+  { code: 'USD', symbol: '$', name: 'Dólar Americano', rate: 0.17, locale: 'en-US' },
+  { code: 'EUR', symbol: '€', name: 'Euro', rate: 0.16, locale: 'de-DE' },
+];
+
+const BRL_CURRENCY: Currency = { code: 'BRL', symbol: 'R$', name: 'Real', rate: 1, locale: 'pt-BR' };
+
+const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, touristLanguage }) => {
+  const [display, setDisplay] = useState('0');
+  const [expression, setExpression] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(CURRENCIES[0]);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isInverted, setIsInverted] = useState(false); // false = BRL->USD/EUR, true = USD/EUR->BRL
+
+  // Helper to format numbers based on locale
+  const formatNumber = (val: string, locale: string) => {
+    // Split into integer and decimal parts
+    const parts = val.split(',');
+    const integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? parts[1] : null;
+
+    // Clean non-numeric chars from integer part for formatting
+    const cleanInteger = integerPart.replace(/\D/g, '');
+
+    // Create formatter
+    const formatter = new Intl.NumberFormat(locale);
+
+    // Format integer part
+    let formattedInteger = cleanInteger;
+    if (cleanInteger) {
+      formattedInteger = formatter.format(BigInt(cleanInteger));
+    }
+
+    // Reassemble
+    const decimalSeparator = locale === 'en-US' ? '.' : ',';
+
+    // Handle cases like "0," or just formatted integer
+    if (decimalPart !== null) {
+      return `${formattedInteger}${decimalSeparator}${decimalPart}`;
+    }
+
+    // If original had comma but no decimal part yet (typing "123,")
+    if (val.includes(',')) {
+      return `${formattedInteger}${decimalSeparator}`;
+    }
+
+    return formattedInteger || '0';
+  };
+
+  const formatExpression = (expr: string, locale: string) => {
+    // Split by operators but keep them
+    const tokens = expr.split(/([+\-×÷])/);
+    return tokens.map(token => {
+      // If operator, return as is
+      if (['+', '-', '×', '÷'].includes(token)) return ` ${token} `;
+      // If number, format it
+      return formatNumber(token, locale);
+    }).join('');
+  };
+
+  const handleKey = (key: string) => {
+    if (key === 'C') {
+      setDisplay('0');
+      setExpression('');
+      return;
+    }
+
+    if (key === '=') {
+      try {
+        const result = eval(display.replace('×', '*').replace('÷', '/').replace(',', '.'));
+        setExpression(display); // Keep raw expression for history
+        setDisplay(result.toString().replace('.', ','));
+      } catch {
+        setDisplay('Erro');
+      }
+      return;
+    }
+
+    if (key === 'backspace') {
+      setDisplay(prev => prev.length > 1 ? prev.slice(0, -1) : '0');
+      return;
+    }
+
+    // Prevent multiple commas in same number segment
+    if (key === ',') {
+      const parts = display.split(/[+\-×÷]/);
+      const currentNumber = parts[parts.length - 1];
+      if (currentNumber.includes(',')) return;
+    }
+
+    setDisplay(prev => (prev === '0' && key !== ',' ? key : prev + key));
+  };
+
+  const getConverted = () => {
+    try {
+      // Parse current display value (last number if expression)
+      const parts = display.split(/[+\-×÷]/);
+      const currentValStr = parts[parts.length - 1];
+      const val = parseFloat(currentValStr.replace(',', '.'));
+
+      if (isNaN(val)) return '0,00';
+
+      let result = 0;
+      if (isInverted) {
+        // Foreign -> BRL
+        result = val / selectedCurrency.rate;
+        return result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        // BRL -> Foreign
+        result = val * selectedCurrency.rate;
+        return result.toLocaleString(selectedCurrency.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    } catch {
+      return '0,00';
+    }
+  };
+
+  const toggleConversion = () => {
+    setIsInverted(!isInverted);
+  };
+
+  // Determine current active locale for the main display
+  const currentDisplayLocale = isInverted ? selectedCurrency.locale : 'pt-BR';
+
+  const handleShareToChat = async () => {
+    const brlValue = display;
+    const convertedValue = getConverted();
+
+    if (brlValue === '0' || brlValue === 'Erro') {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const originalText = `O valor é ${formatExpression(brlValue, 'pt-BR')} (R$) = ${convertedValue} (${selectedCurrency.code})`;
+
+      let translatedText = originalText;
+      if (touristLanguage !== Language.PT_BR) {
+        translatedText = await translateText(originalText, Language.PT_BR, touristLanguage);
+      }
+
+      const newMessage: Message = {
+        id: Math.random().toString(36).substr(2, 9),
+        sender: 'VENDOR',
+        originalText,
+        translatedText,
+        timestamp: Date.now(),
+        originalLanguage: Language.PT_BR,
+        targetLanguage: touristLanguage
+      };
+
+      onAddMessage(newMessage);
+
+      setTimeout(() => {
+        speechService.speak(translatedText, touristLanguage);
+      }, 300);
+
+      onBack();
+    } catch (error) {
+      console.error('Error sharing to chat:', error);
+      setIsProcessing(false);
+    }
+  };
+
+  const touristLangInfo = getLanguageInfo(touristLanguage);
+
+  return (
+    <div className="flex flex-col h-full bg-charcoal-deep relative">
+      {/* Header - Brutalist */}
+      <header className="sticky top-0 z-30 bg-charcoal border-b-4 border-sun-gold animate-slide-up">
+        <div className="flex items-center justify-between px-5 pt-10 pb-4">
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center size-12 rounded-sm bg-charcoal-soft text-white shadow-lg hover:translate-y-[-2px] active:translate-y-0 transition-transform"
+          >
+            <span className="material-symbols-outlined text-2xl">arrow_back</span>
+          </button>
+
+          {/* New Two-Tone Logo */}
+          <div className="flex items-center gap-0">
+            {/* Sun Icon - Golden Square */}
+            <div className="w-10 h-10 bg-sun-gold rounded-l-md flex items-center justify-center">
+              <span className="material-symbols-outlined text-charcoal-deep text-xl fill-1">wb_sunny</span>
+            </div>
+            {/* Text - Red Background */}
+            <div className="h-10 bg-red-500 rounded-r-md px-3 flex items-center">
+              <span className="text-base font-black tracking-tight text-white font-display">BitsSun</span>
+            </div>
+          </div>
+
+          {/* Spacer to center logo */}
+          <div className="size-12"></div>
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-col p-5 overflow-y-auto hide-scrollbar">
+        {/* Display - Brutalist */}
+        <div className="flex flex-col justify-end gap-3 bg-charcoal rounded-sm p-5 shadow-xl border-l-4 border-sun-gold mb-5">
+          <div className="text-right text-white/50 text-sm font-bold overflow-hidden whitespace-nowrap h-5">
+            {formatExpression(expression, currentDisplayLocale)}
+          </div>
+
+          {/* Source Currency */}
+          <div className="flex items-center justify-between">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-black border-l-4 ${isInverted ? 'bg-sun-gold text-charcoal-deep border-sun-gold/60' : 'bg-vendor-green text-white border-vendor-green-dark'}`}>
+              {isInverted ? `${selectedCurrency.code}` : '🇧🇷 BRL'}
+            </div>
+            <div className="text-right text-white text-4xl font-black tracking-tight overflow-hidden whitespace-nowrap">
+              {isInverted
+                ? `${selectedCurrency.symbol} ${formatExpression(display, selectedCurrency.locale)}`
+                : `R$ ${formatExpression(display, 'pt-BR')}`}
+            </div>
+          </div>
+
+          {/* Swap Button */}
+          <button
+            onClick={toggleConversion}
+            className="flex items-center justify-center gap-2 py-2 bg-sun-gold/20 hover:bg-sun-gold/40 rounded-sm transition-colors"
+          >
+            <span className="material-symbols-outlined text-sun-gold text-2xl">swap_vert</span>
+            <span className="text-sun-gold text-xs font-bold uppercase tracking-widest">Alternar</span>
+          </button>
+
+          {/* Converted Currency */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowCurrencyPicker(!showCurrencyPicker)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-black hover:translate-y-[-1px] active:translate-y-0 transition-transform ${isInverted ? 'bg-vendor-green text-white border-l-4 border-vendor-green-dark' : 'bg-sun-gold text-charcoal-deep'}`}
+            >
+              {isInverted ? '🇧🇷 BRL' : selectedCurrency.code}
+              <span className="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+            <div className={`text-right text-3xl font-black tracking-tight overflow-hidden whitespace-nowrap ${isInverted ? 'text-white' : 'text-sun-gold'}`}>
+              {isInverted
+                ? `R$ ${getConverted()}`
+                : `${selectedCurrency.symbol} ${getConverted()}`}
+            </div>
+          </div>
+
+          {/* Currency Picker */}
+          {showCurrencyPicker && (
+            <div className="mt-2 bg-charcoal-deep rounded-sm border-2 border-sun-gold overflow-hidden">
+              {CURRENCIES.map((currency) => (
+                <button
+                  key={currency.code}
+                  onClick={() => {
+                    setSelectedCurrency(currency);
+                    setShowCurrencyPicker(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 hover:bg-sun-gold/20 transition-colors border-b border-white/10 ${currency.code === selectedCurrency.code ? 'bg-sun-gold/30' : ''
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-white">{currency.symbol}</span>
+                    <span className="text-sm text-white/70">{currency.name}</span>
+                  </div>
+                  <span className="text-xs font-black text-white/50">{currency.code}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Keypad - Brutalist */}
+        <div className="grid grid-cols-4 gap-2 mb-5">
+          <CalcKey label="C" onClick={() => handleKey('C')} variant="danger" />
+          <CalcKey label={<span className="material-symbols-outlined text-2xl">backspace</span>} onClick={() => handleKey('backspace')} variant="secondary" />
+          <CalcKey label="%" onClick={() => handleKey('%')} variant="secondary" />
+          <CalcKey label="÷" onClick={() => handleKey('÷')} variant="operator" />
+
+          <CalcKey label="7" onClick={() => handleKey('7')} />
+          <CalcKey label="8" onClick={() => handleKey('8')} />
+          <CalcKey label="9" onClick={() => handleKey('9')} />
+          <CalcKey label="×" onClick={() => handleKey('×')} variant="operator" />
+
+          <CalcKey label="4" onClick={() => handleKey('4')} />
+          <CalcKey label="5" onClick={() => handleKey('5')} />
+          <CalcKey label="6" onClick={() => handleKey('6')} />
+          <CalcKey label="-" onClick={() => handleKey('-')} variant="operator" />
+
+          <CalcKey label="1" onClick={() => handleKey('1')} />
+          <CalcKey label="2" onClick={() => handleKey('2')} />
+          <CalcKey label="3" onClick={() => handleKey('3')} />
+          <CalcKey label="+" onClick={() => handleKey('+')} variant="operator" />
+
+          <CalcKey label="0" onClick={() => handleKey('0')} className="col-span-2" />
+          <CalcKey label="," onClick={() => handleKey(',')} />
+          <CalcKey label="=" onClick={() => handleKey('=')} variant="operator" />
+        </div>
+
+        {/* Send Button - Brutalist */}
+        <div className="mt-auto">
+          <button
+            onClick={handleShareToChat}
+            disabled={isProcessing || display === '0' || display === 'Erro'}
+            className="flex items-center justify-center gap-3 py-5 w-full bg-vendor-green text-white rounded-sm font-black text-lg shadow-xl border-l-4 border-vendor-green-dark hover:translate-y-[-2px] active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-sm"></div>
+                <span className="uppercase tracking-wide">Enviando...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-2xl fill-1">send</span>
+                <span className="uppercase tracking-wide">Enviar para o Chat</span>
+              </>
+            )}
+          </button>
+        </div>
+      </main>
+
+      <footer className="bg-charcoal border-t-4 border-sun-gold px-5 py-4 text-center">
+        <p className="text-[9px] text-white/40 font-black uppercase tracking-widest">
+          © 2025 JCBULHOES
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+interface CalcKeyProps {
+  label: React.ReactNode;
+  onClick: () => void;
+  variant?: 'default' | 'secondary' | 'operator' | 'danger';
+  className?: string;
+}
+
+const CalcKey: React.FC<CalcKeyProps> = ({ label, onClick, variant = 'default', className = '' }) => {
+  const variants = {
+    default: 'bg-charcoal-soft text-white',
+    secondary: 'bg-charcoal text-white/70',
+    operator: 'bg-sun-gold text-charcoal-deep font-black',
+    danger: 'bg-tourist-coral text-white font-black'
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center h-16 rounded-sm text-2xl font-bold shadow-lg hover:translate-y-[-2px] active:translate-y-0 transition-all ${variants[variant]} ${className}`}
+    >
+      {label}
+    </button>
+  );
+};
+
+export default UtilityScreen;
