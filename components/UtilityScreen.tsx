@@ -196,15 +196,19 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
     }
 
     if (key === '=') {
-      try {
-        // Parse display value to number
-        const value = parseFloat(display.replace(',', '.'));
-        const formatted = value.toFixed(2);
-        setDisplay(formatted.replace('.', ','));
-        setRawValue((value * 100).toString());
-        setExpression('');
-      } catch {
-        setDisplay('Erro');
+      if (expression) {
+        try {
+          // Evaluate the full expression
+          const fullExpression = expression + display.replace(',', '.');
+          const result = eval(fullExpression.replace('×', '*').replace('÷', '/'));
+          const formatted = parseFloat(result).toFixed(2);
+          setDisplay(formatted.replace('.', ','));
+          setRawValue((result * 100).toFixed(0));
+          setExpression('');
+        } catch {
+          setDisplay('Erro');
+          setExpression('');
+        }
       }
       return;
     }
@@ -213,6 +217,27 @@ const UtilityScreen: React.FC<UtilityScreenProps> = ({ onBack, onAddMessage, tou
       const newRaw = rawValue.length > 1 ? rawValue.slice(0, -1) : '0';
       setRawValue(newRaw);
       setDisplay(formatCurrency(newRaw));
+      return;
+    }
+
+    // Handle operators (+, -, ×, ÷)
+    if (['+', '-', '×', '÷'].includes(key)) {
+      if (expression) {
+        // Evaluate current expression first
+        try {
+          const fullExpression = expression + display.replace(',', '.');
+          const result = eval(fullExpression.replace('×', '*').replace('÷', '/'));
+          const formatted = parseFloat(result).toFixed(2);
+          setDisplay(formatted.replace('.', ','));
+          setRawValue((result * 100).toFixed(0));
+          setExpression(formatted.replace('.', ',') + key);
+        } catch {
+          setExpression(display + key);
+        }
+      } else {
+        setExpression(display + key);
+      }
+      setRawValue('0');
       return;
     }
 
