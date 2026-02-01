@@ -30,6 +30,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
   const [micPermissionGranted, setMicPermissionGranted] = useState<boolean | null>(null);
   const [autoPlayVoice, setAutoPlayVoice] = useState(false); // Hybrid voice mode
   const [flashlightOn, setFlashlightOn] = useState(false); // Flashlight state
+  const [showTypingSelector, setShowTypingSelector] = useState(false); // Typing speaker selector modal
   const flashlightStreamRef = useRef<MediaStream | null>(null);
 
   const [voiceSettings] = useState<VoiceSettings>({
@@ -271,7 +272,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
         <div className="grid grid-cols-7 gap-1 px-4 pb-3">
           {/* Keyboard Input Button */}
           <button
-            onClick={() => handleTextInput(currentSpeaker)}
+            onClick={() => setShowTypingSelector(true)}
             className="flex items-center justify-center h-14 w-full rounded-sm bg-charcoal-soft text-white hover:bg-sun-gold hover:text-charcoal-deep active:scale-95 transition-all shadow-lg"
             title="Digitar Mensagem"
           >
@@ -501,6 +502,65 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ messages, onAddMessage, onClear
         onSelectPhrase={handlePhraseSelect}
         currentLanguage={Language.PT_BR}
       />
+
+      {/* Typing Speaker Selector Modal */}
+      {showTypingSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal-deep/80 backdrop-blur-sm animate-scale-in">
+          <div className="bg-surface rounded-sm p-6 max-w-sm w-full mx-4 shadow-2xl border-t-4 border-sun-gold">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-sun-gold rounded-sm flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="material-symbols-outlined text-charcoal-deep text-3xl">keyboard</span>
+              </div>
+              <h3 className="text-xl font-black text-charcoal uppercase tracking-wide">
+                Quem vai digitar?
+              </h3>
+              <p className="text-sm text-charcoal-soft mt-1">
+                Selecione quem está digitando a mensagem
+              </p>
+            </div>
+
+            {/* Selection Buttons */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* Vendedor Button */}
+              <button
+                onClick={() => {
+                  setShowTypingSelector(false);
+                  handleTextInput('VENDOR');
+                }}
+                className="flex flex-col items-center justify-center gap-3 min-h-[120px] bg-vendor-green text-white rounded-sm shadow-xl border-l-4 border-vendor-green-dark hover:translate-y-[-3px] hover:shadow-2xl active:translate-y-0 transition-all"
+              >
+                <div className="size-14 bg-white/20 rounded-sm flex items-center justify-center">
+                  <span className="text-3xl">🇧🇷</span>
+                </div>
+                <span className="text-sm font-black uppercase tracking-widest">Vendedor</span>
+              </button>
+
+              {/* Turista Button */}
+              <button
+                onClick={() => {
+                  setShowTypingSelector(false);
+                  handleTextInput('TOURIST');
+                }}
+                className="flex flex-col items-center justify-center gap-3 min-h-[120px] bg-tourist-coral text-white rounded-sm shadow-xl border-l-4 border-tourist-coral-dark hover:translate-y-[-3px] hover:shadow-2xl active:translate-y-0 transition-all"
+              >
+                <div className="size-14 bg-white/20 rounded-sm flex items-center justify-center">
+                  <span className="text-3xl">{touristLangInfo?.flag || '🌍'}</span>
+                </div>
+                <span className="text-sm font-black uppercase tracking-widest">Turista</span>
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setShowTypingSelector(false)}
+              className="w-full py-3 bg-charcoal-soft/10 text-charcoal font-bold rounded-sm hover:bg-charcoal-soft/20 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
