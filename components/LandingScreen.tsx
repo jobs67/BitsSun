@@ -10,6 +10,7 @@ interface LandingScreenProps {
 const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
   const [showWarning, setShowWarning] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<'valid' | 'invalid' | 'missing' | 'checking'>('checking');
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
     setShowWarning(!isSpeechRecognitionSupported());
@@ -61,6 +62,25 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
             <span className="text-xl font-black tracking-tight text-white font-display">BitsSun</span>
           </div>
         </button>
+
+        {/* API Status Indicator - Discrete */}
+        {apiKeyStatus !== 'checking' && (
+          <button
+            onClick={() => setShowStatusModal(true)}
+            className={`flex items-center justify-center size-10 rounded-sm shadow-lg transition-all active:scale-95 ${apiKeyStatus === 'valid'
+              ? 'bg-vendor-green'
+              : apiKeyStatus === 'missing'
+                ? 'bg-white/20'
+                : 'bg-tourist-coral'
+              }`}
+            title="Status do Sistema"
+          >
+            <span className={`material-symbols-outlined text-xl fill-1 ${apiKeyStatus === 'valid' ? 'text-white' : apiKeyStatus === 'missing' ? 'text-white' : 'text-white'
+              }`}>
+              {apiKeyStatus === 'valid' ? 'verified' : apiKeyStatus === 'missing' ? 'info' : 'warning'}
+            </span>
+          </button>
+        )}
       </header>
 
       {/* Browser Warning */}
@@ -78,37 +98,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
         </div>
       )}
 
-      {/* API Key Status Indicator */}
-      {apiKeyStatus !== 'checking' && (
-        <div className={`mx-6 mb-4 p-4 border-l-4 z-10 animate-slide-up ${apiKeyStatus === 'valid'
-          ? 'bg-vendor-green border-vendor-green-dark'
-          : apiKeyStatus === 'missing'
-            ? 'bg-sun-gold border-sun-gold/60'
-            : 'bg-tourist-coral border-tourist-coral-dark'
-          }`}>
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-white text-xl fill-1">
-              {apiKeyStatus === 'valid' ? 'check_circle' : apiKeyStatus === 'missing' ? 'info' : 'error'}
-            </span>
-            <div className="flex-1">
-              <p className={`text-sm font-bold mb-1 ${apiKeyStatus === 'missing' ? 'text-charcoal-deep' : 'text-white'}`}>
-                {apiKeyStatus === 'valid'
-                  ? '✅ Gemini AI Ativo'
-                  : apiKeyStatus === 'missing'
-                    ? '⚠️ Modo Gratuito'
-                    : '❌ API Key Inválida'}
-              </p>
-              <p className={`text-xs ${apiKeyStatus === 'missing' ? 'text-charcoal-deep/80' : 'text-white/80'}`}>
-                {apiKeyStatus === 'valid'
-                  ? 'Tradução premium disponível via Gemini AI.'
-                  : apiKeyStatus === 'missing'
-                    ? 'Usando MyMemory API (gratuito). Configure VITE_GEMINI_API_KEY para melhor qualidade.'
-                    : 'Verifique sua chave no arquivo .env.local'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 z-10">
         {/* Bold typography hero */}
@@ -181,6 +171,75 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onStart }) => {
           © 2025 JCBULHOES
         </span>
       </footer>
+
+      {/* Status Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal-deep/80 backdrop-blur-sm animate-scale-in">
+          <div className="bg-surface rounded-sm p-6 max-w-sm w-full mx-4 shadow-2xl border-t-4 border-sun-gold">
+            {/* Header */}
+            <div className="text-center mb-5">
+              <div className={`w-16 h-16 rounded-sm flex items-center justify-center mx-auto mb-4 shadow-lg ${apiKeyStatus === 'valid'
+                  ? 'bg-vendor-green'
+                  : apiKeyStatus === 'missing'
+                    ? 'bg-sun-gold'
+                    : 'bg-tourist-coral'
+                }`}>
+                <span className={`material-symbols-outlined text-3xl fill-1 ${apiKeyStatus === 'missing' ? 'text-charcoal-deep' : 'text-white'
+                  }`}>
+                  {apiKeyStatus === 'valid' ? 'verified' : apiKeyStatus === 'missing' ? 'info' : 'warning'}
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-charcoal uppercase tracking-wide">
+                Status do Sistema
+              </h3>
+            </div>
+
+            {/* Status Info */}
+            <div className={`p-4 rounded-sm mb-4 ${apiKeyStatus === 'valid'
+                ? 'bg-vendor-green/10 border-l-4 border-vendor-green'
+                : apiKeyStatus === 'missing'
+                  ? 'bg-sun-gold/10 border-l-4 border-sun-gold'
+                  : 'bg-tourist-coral/10 border-l-4 border-tourist-coral'
+              }`}>
+              <p className={`text-sm font-bold mb-2 ${apiKeyStatus === 'valid'
+                  ? 'text-vendor-green-dark'
+                  : apiKeyStatus === 'missing'
+                    ? 'text-charcoal'
+                    : 'text-tourist-coral-dark'
+                }`}>
+                {apiKeyStatus === 'valid'
+                  ? '✅ Gemini AI Ativo'
+                  : apiKeyStatus === 'missing'
+                    ? '💡 Modo Gratuito'
+                    : '⚠️ API Key Inválida'}
+              </p>
+              <p className="text-xs text-charcoal-soft leading-relaxed">
+                {apiKeyStatus === 'valid'
+                  ? 'Tradução premium disponível via Gemini AI. Você está usando a melhor qualidade de tradução.'
+                  : apiKeyStatus === 'missing'
+                    ? 'Usando MyMemory API (gratuito). Para melhor qualidade, configure VITE_GEMINI_API_KEY no arquivo .env.local.'
+                    : 'A chave da API está configurada mas é inválida. Verifique sua chave no arquivo .env.local.'}
+              </p>
+            </div>
+
+            {/* Translation Service Info */}
+            <div className="bg-charcoal-soft/10 p-3 rounded-sm mb-4">
+              <p className="text-xs text-charcoal-soft">
+                <span className="font-bold">Serviço atual:</span>{' '}
+                {apiKeyStatus === 'valid' ? 'Google Gemini AI' : 'MyMemory API (gratuito)'}
+              </p>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowStatusModal(false)}
+              className="w-full py-3 bg-charcoal-soft text-white font-bold rounded-sm hover:bg-charcoal transition-colors"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
