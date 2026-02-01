@@ -4,8 +4,8 @@ import { Language, getLanguageInfo } from './languageConfig';
 import { translationCache } from './translationCache';
 import { getPreTranslation } from './preTranslatedPhrases';
 
-// Get API key from environment
-const apiKey = process.env.VITE_GEMINI_API_KEY || '';
+// Get API key from environment (Vite uses import.meta.env)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 // Log API key status
 if (!apiKey || apiKey === '') {
